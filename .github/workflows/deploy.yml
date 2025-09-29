@@ -39,7 +39,7 @@ jobs:
       - name: Generate HTML files using smart script
         run: |
           # Set root file (change this to your root markdown file)
-          ROOT_FILE="Portfolio site.md"
+          ROOT_FILE="README.md"
 
           # Make deploy script executable
           chmod +x deploy-diaryx.sh

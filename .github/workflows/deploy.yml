@@ -42,10 +42,10 @@ jobs:
           ROOT_FILE="Portfolio site.md"
 
           # Make deploy script executable
-          chmod +x deploy-smart.sh
+          chmod +x deploy-diaryx.sh
 
           # Run smart deployment
-          ./deploy-smart.sh "$ROOT_FILE" . 2>&1
+          ./deploy-diaryx.sh "$ROOT_FILE" . 2>&1
 
           # Move output to expected location for GitHub Pages
           mv public build/public

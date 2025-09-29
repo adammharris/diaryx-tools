@@ -1,0 +1,459 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Diaryx Viewer</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <!-- DOMPurify as UMD global -->
+        <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+        <style>
+            body {
+                font-family:
+                    system-ui,
+                    -apple-system,
+                    Segoe UI,
+                    Roboto,
+                    Helvetica,
+                    Arial,
+                    sans-serif;
+                max-width: 800px;
+                margin: 2rem auto;
+                padding: 0 1rem;
+            }
+            .diaryx-meta {
+                background: #f7f7f9;
+                border: 1px solid #e3e3e6;
+                border-radius: 6px;
+                padding: 1rem;
+                margin-bottom: 1.5rem;
+            }
+            .diaryx-meta dl {
+                display: grid;
+                grid-template-columns: 160px 1fr;
+                gap: 0.5rem 0.75rem;
+                margin: 0;
+            }
+            .diaryx-meta dt {
+                font-weight: 600;
+                color: #2c3e50;
+            }
+            .diaryx-meta dd {
+                margin: 0;
+            }
+            .diaryx-meta a {
+                color: #3498db;
+                text-decoration: none;
+            }
+            .diaryx-meta a:hover {
+                text-decoration: underline;
+            }
+            .navigation-section {
+                background: #e8f4f8;
+                border-left: 4px solid #3498db;
+                padding: 0.75rem 1rem;
+                margin: 1rem 0;
+                border-radius: 4px;
+            }
+            .navigation-section h3 {
+                margin: 0 0 0.5rem 0;
+                font-size: 1rem;
+                color: #2c3e50;
+            }
+            .navigation-section ul {
+                margin: 0;
+                padding-left: 1.5rem;
+            }
+            .navigation-section li {
+                margin: 0.25rem 0;
+            }
+            .navigation-link {
+                color: #2980b9;
+                cursor: pointer;
+                text-decoration: none;
+            }
+            .navigation-link:hover {
+                text-decoration: underline;
+            }
+            .breadcrumb {
+                background: #fff;
+                padding: 0.5rem 0;
+                margin-bottom: 1rem;
+                font-size: 0.9rem;
+                color: #7f8c8d;
+            }
+            .breadcrumb a {
+                color: #3498db;
+                text-decoration: none;
+            }
+            .breadcrumb a:hover {
+                text-decoration: underline;
+            }
+            .breadcrumb span {
+                margin: 0 0.5rem;
+            }
+            pre,
+            code {
+                background: #f5f5f5;
+            }
+            img {
+                max-width: 100%;
+                height: auto;
+            }
+            .error {
+                background: #fee;
+                border: 1px solid #fcc;
+                border-radius: 4px;
+                padding: 1rem;
+                color: #c33;
+            }
+        </style>
+        <script type="module">
+            import { marked } from "https://esm.sh/marked@12";
+            import yaml from "https://esm.sh/js-yaml@4";
+
+            // Default file to load - can be replaced in CI/CD via sed/curl
+            const MD_PATH = "./README.md"; // REPLACE_WITH_FILENAME
+
+            // Mode: 'auto' detects, 'static' forces .html links, 'interactive' forces .md links
+            const MODE = "auto"; // REPLACE_WITH_MODE
+
+            const metaOrder = [
+                "title",
+                "author",
+                "created",
+                "updated",
+                "visibility",
+                "format",
+                "reachable",
+            ];
+
+            // Keep track of loaded files for breadcrumb navigation
+            let navigationHistory = [];
+            let currentFile = null;
+            let isStaticMode = false;
+
+            // Detect if we're in static mode (serving .html files)
+            async function detectMode() {
+                if (MODE === "static") return true;
+                if (MODE === "interactive") return false;
+
+                // Auto-detect: check if we're viewing a generated .html file
+                // In static mode, the page itself is .html and loads .md for content
+                // In interactive mode, we're viewing index.html which loads .md files
+                const currentPath = window.location.pathname;
+
+                // If we're at root or index.html, use interactive mode
+                if (currentPath === "/" || currentPath.endsWith("index.html")) {
+                    return false;
+                }
+
+                // If pathname ends with .html and it's not index.html, use static mode
+                if (currentPath.endsWith(".html")) {
+                    return true;
+                }
+
+                // Default to interactive mode
+                return false;
+            }
+
+            function splitFrontMatter(text) {
+                if (!text.startsWith("---\n"))
+                    return { meta: {}, content: text };
+                const rest = text.slice(4);
+                const endIdx = rest.search(/\n(?:---|\.\.\.)\s*\r?\n/);
+                if (endIdx === -1) return { meta: {}, content: text };
+                const fm = rest.slice(0, endIdx + 1);
+                const after = rest
+                    .slice(endIdx + 1)
+                    .replace(/^(?:---|\.\.\.)\s*\r?\n/, "");
+                let meta = {};
+                try {
+                    meta = yaml.load(fm) || {};
+                } catch (e) {
+                    console.warn("YAML parse error:", e);
+                }
+                return { meta, content: after };
+            }
+
+            function toInlineHTML(value) {
+                if (Array.isArray(value)) {
+                    return value.map((v) => toInlineHTML(v)).join(", ");
+                }
+                if (value == null) return "";
+                const s = String(value);
+                const html = marked.parseInline(s);
+                return DOMPurify.sanitize(html);
+            }
+
+            function parseMarkdownLink(str) {
+                // Parse "[text](url)" format
+                const match = str.match(/^\[([^\]]*)\]\(([^)]+)\)$/);
+                if (match) {
+                    let url = match[2];
+                    // Strip angle brackets if present (e.g., <Resume.md>)
+                    url = url.replace(/^<(.+)>$/, "$1");
+                    // Convert .md to .html if in static mode
+                    if (isStaticMode && url.endsWith(".md")) {
+                        url = url.replace(/\.md$/, ".html");
+                    }
+                    return { text: match[1] || match[2], url: url };
+                }
+                return null;
+            }
+
+            function createNavigationLink(linkStr, isLocal = true) {
+                const parsed = parseMarkdownLink(linkStr);
+                if (!parsed) return null;
+
+                const isMarkdownFile =
+                    parsed.url.endsWith(".md") || parsed.url.endsWith(".html");
+
+                if (isLocal && isMarkdownFile) {
+                    // Local markdown file - make it clickable to load
+                    const a = document.createElement("a");
+                    if (isStaticMode) {
+                        // In static mode, use regular links
+                        a.href = parsed.url;
+                    } else {
+                        // In interactive mode, load dynamically
+                        a.href = "#";
+                        a.addEventListener("click", (e) => {
+                            e.preventDefault();
+                            loadFile(parsed.url);
+                        });
+                    }
+                    a.className = "navigation-link";
+                    a.textContent = parsed.text;
+                    return a;
+                } else {
+                    // External link or non-markdown
+                    const a = document.createElement("a");
+                    a.href = parsed.url;
+                    a.className = "navigation-link";
+                    a.textContent = parsed.text;
+                    a.target = "_blank";
+                    a.rel = "noopener noreferrer";
+                    return a;
+                }
+            }
+
+            function renderNavigation(meta) {
+                const nav = document.getElementById("navigation");
+                nav.innerHTML = "";
+
+                // Render part_of (parent documents)
+                if (meta.part_of) {
+                    const section = document.createElement("div");
+                    section.className = "navigation-section";
+
+                    const heading = document.createElement("h3");
+                    heading.textContent = "↑ Part of:";
+                    section.appendChild(heading);
+
+                    const ul = document.createElement("ul");
+                    const parents = Array.isArray(meta.part_of)
+                        ? meta.part_of
+                        : [meta.part_of];
+
+                    parents.forEach((parent) => {
+                        const li = document.createElement("li");
+                        const link = createNavigationLink(parent);
+                        if (link) li.appendChild(link);
+                        else li.textContent = parent;
+                        ul.appendChild(li);
+                    });
+
+                    section.appendChild(ul);
+                    nav.appendChild(section);
+                }
+
+                // Render contents (child documents)
+                if (meta.contents) {
+                    const section = document.createElement("div");
+                    section.className = "navigation-section";
+
+                    const heading = document.createElement("h3");
+                    heading.textContent = "↓ Contents:";
+                    section.appendChild(heading);
+
+                    const ul = document.createElement("ul");
+                    const children = Array.isArray(meta.contents)
+                        ? meta.contents
+                        : [meta.contents];
+
+                    children.forEach((child) => {
+                        const li = document.createElement("li");
+                        const link = createNavigationLink(child);
+                        if (link) li.appendChild(link);
+                        else li.textContent = child;
+                        ul.appendChild(li);
+                    });
+
+                    section.appendChild(ul);
+                    nav.appendChild(section);
+                }
+            }
+
+            function renderMeta(meta) {
+                const dl = document.getElementById("meta");
+                dl.innerHTML = "";
+
+                const seenKeys = new Set();
+
+                // First, render ordered properties
+                metaOrder.forEach((key) => {
+                    if (meta[key] == null) return;
+                    const dt = document.createElement("dt");
+                    dt.textContent = key;
+                    const dd = document.createElement("dd");
+                    dd.innerHTML = toInlineHTML(meta[key]);
+                    dl.append(dt, dd);
+                    seenKeys.add(key);
+                });
+
+                // Skip navigation properties - they're rendered separately
+                seenKeys.add("contents");
+                seenKeys.add("part_of");
+
+                // Then, render all remaining properties
+                Object.keys(meta).forEach((key) => {
+                    if (seenKeys.has(key)) return;
+                    const dt = document.createElement("dt");
+                    dt.textContent = key;
+                    const dd = document.createElement("dd");
+                    dd.innerHTML = toInlineHTML(meta[key]);
+                    dl.append(dt, dd);
+                });
+            }
+
+            function getBasePath(path) {
+                const lastSlash = path.lastIndexOf("/");
+                return lastSlash >= 0 ? path.substring(0, lastSlash + 1) : "";
+            }
+
+            function resolvePath(basePath, relativePath) {
+                // Simple relative path resolution
+                if (
+                    relativePath.startsWith("http://") ||
+                    relativePath.startsWith("https://")
+                ) {
+                    return relativePath;
+                }
+
+                // Remove ./ prefix if present
+                if (relativePath.startsWith("./")) {
+                    relativePath = relativePath.substring(2);
+                }
+
+                return basePath + relativePath;
+            }
+
+            async function loadFile(path) {
+                try {
+                    // Resolve relative path based on current file
+                    const basePath = currentFile
+                        ? getBasePath(currentFile)
+                        : "";
+                    let fullPath = currentFile
+                        ? resolvePath(basePath, path)
+                        : path;
+
+                    // In interactive mode, always fetch .md files
+                    if (!isStaticMode && fullPath.endsWith(".html")) {
+                        fullPath = fullPath.replace(/\.html$/, ".md");
+                    }
+
+                    const res = await fetch(fullPath);
+                    if (!res.ok) {
+                        throw new Error(
+                            `Failed to fetch ${fullPath}: ${res.status}`,
+                        );
+                    }
+
+                    const text = await res.text();
+                    const { meta, content } = splitFrontMatter(text);
+
+                    // Update current file
+                    currentFile = fullPath;
+
+                    // Update page title
+                    document.title = meta.title || "Diaryx Viewer";
+
+                    // Render metadata
+                    renderMeta(meta);
+
+                    // Render navigation
+                    renderNavigation(meta);
+
+                    // Render content
+                    let html = marked.parse(content);
+
+                    // In static mode, convert .md links to .html in rendered content
+                    if (isStaticMode) {
+                        // Replace .md with .html in href attributes
+                        // Handle both encoded (%20) and unencoded spaces
+                        html = html.replace(
+                            /href="([^"]*\.md)"/g,
+                            (match, url) => {
+                                return `href="${url.replace(/\.md$/, ".html")}"`;
+                            },
+                        );
+                    }
+
+                    document.getElementById("content").innerHTML =
+                        DOMPurify.sanitize(html);
+
+                    // In interactive mode, intercept clicks on .md links in content
+                    if (!isStaticMode) {
+                        const contentDiv = document.getElementById("content");
+                        const links = contentDiv.querySelectorAll("a[href]");
+                        links.forEach((link) => {
+                            let href = link.getAttribute("href");
+                            // Strip angle brackets if present (marked.js might include them)
+                            href = href.replace(/^<(.+)>$/, "$1");
+                            // Check if it's a local .md file (including URL-encoded)
+                            const decodedHref = decodeURIComponent(href);
+                            if (
+                                decodedHref.endsWith(".md") &&
+                                !decodedHref.startsWith("http://") &&
+                                !decodedHref.startsWith("https://") &&
+                                !decodedHref.startsWith("mailto:")
+                            ) {
+                                link.addEventListener("click", (e) => {
+                                    e.preventDefault();
+                                    loadFile(decodedHref);
+                                });
+                            }
+                        });
+                    }
+
+                    // Scroll to top
+                    window.scrollTo(0, 0);
+                } catch (err) {
+                    document.getElementById("content").innerHTML = `
+                        <div class="error">
+                            <strong>Error loading file:</strong> ${DOMPurify.sanitize(String(err))}
+                        </div>
+                    `;
+                    console.error(err);
+                }
+            }
+
+            // Initial load
+            (async () => {
+                isStaticMode = await detectMode();
+                console.log(
+                    `Diaryx viewer running in ${isStaticMode ? "static" : "interactive"} mode`,
+                );
+                loadFile(MD_PATH);
+            })();
+        </script>
+    </head>
+    <body>
+        <div class="diaryx-meta">
+            <dl id="meta"></dl>
+        </div>
+        <nav id="navigation"></nav>
+        <main id="content">Loading…</main>
+    </body>
+</html>

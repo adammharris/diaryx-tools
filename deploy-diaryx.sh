@@ -14,7 +14,7 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 # Configuration
-TEMPLATE_URL=""  # Leave empty to use local index.html
+TEMPLATE_URL="https://raw.githubusercontent.com/adammharris/diaryx-tools/refs/heads/main/index.html"  # Leave empty to use local index.html
 OUTPUT_DIR="./public"
 TEMPLATE_FILE="./template.html"
 

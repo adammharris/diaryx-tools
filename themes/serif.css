@@ -1,0 +1,192 @@
+/* Diaryx Viewer - Serif Theme */
+
+/* Light mode colors (default) */
+:root {
+    --primary-color: #8b4513;
+    --primary-hover: #654321;
+    --text-color: #2b2b2b;
+    --text-muted: #6b6b6b;
+    --background: #fdfdf8;
+    --background-alt: #f5f5ed;
+    --border-color: #d4d4c8;
+    --border-accent: #8b4513;
+    --nav-background: #f0ebe0;
+    --error-background: #fff5f0;
+    --error-border: #e8c5b8;
+    --error-text: #a0522d;
+    --code-background: #f5f5ed;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --shadow-hover: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+/* Dark mode colors */
+html[data-mode="dark"] {
+    --primary-color: #d4a574;
+    --primary-hover: #c49464;
+    --text-color: #e5e5dc;
+    --text-muted: #a8a89a;
+    --background: #1a1916;
+    --background-alt: #242218;
+    --border-color: #3a3832;
+    --border-accent: #d4a574;
+    --nav-background: #2a2720;
+    --error-background: #2d1f1f;
+    --error-border: #4a3535;
+    --error-text: #d4a574;
+    --code-background: #242218;
+    --shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* Theme-specific body font styling */
+body {
+    font-family:
+        "Iowan Old Style", "Palatino Linotype", "URW Palladio L", P052, serif;
+    line-height: 1.7;
+    font-size: 18px;
+}
+
+/* Theme-specific metadata dt font */
+.diaryx-meta dt {
+    font-family:
+        system-ui,
+        -apple-system,
+        sans-serif;
+}
+
+/* Theme-specific link styling */
+.diaryx-meta a {
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s ease;
+}
+
+.diaryx-meta a:hover {
+    border-bottom-color: var(--primary-color);
+    text-decoration: none;
+}
+
+/* Theme-specific navigation heading font */
+.navigation-section h3 {
+    font-family:
+        system-ui,
+        -apple-system,
+        sans-serif;
+}
+
+/* Theme-specific navigation link styling */
+.navigation-link {
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s ease;
+}
+
+.navigation-link:hover {
+    border-bottom-color: var(--primary-color);
+    text-decoration: none;
+}
+
+/* Theme-specific breadcrumb font */
+.breadcrumb {
+    font-family:
+        system-ui,
+        -apple-system,
+        sans-serif;
+}
+
+.breadcrumb a {
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s ease;
+}
+
+.breadcrumb a:hover {
+    border-bottom-color: var(--primary-color);
+    text-decoration: none;
+}
+
+/* Theme-specific code styling */
+code {
+    border: 1px solid var(--border-color);
+}
+
+pre code {
+    border: none;
+}
+
+/* Theme-specific image styling */
+img {
+    border: 1px solid var(--border-color);
+    padding: 0.5rem;
+    background: white;
+}
+
+html[data-mode="dark"] img {
+    background: var(--background-alt);
+    opacity: 0.9;
+}
+
+/* Theme-specific typography */
+main h4 {
+    font-size: 1.35rem;
+    margin: 1.5rem 0 0.75rem;
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+main p {
+    text-align: justify;
+    hyphens: auto;
+}
+
+main p:first-of-type::first-letter {
+    font-size: 3.5em;
+    line-height: 0.8;
+    float: left;
+    margin: 0.1em 0.1em 0 0;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+main a {
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s ease;
+}
+
+main a:hover {
+    border-bottom-color: var(--primary-color);
+    text-decoration: none;
+}
+
+main hr {
+    border: none;
+    border-top: 1px solid var(--border-color);
+    margin: 2.5rem 0;
+}
+
+/* Theme-specific table styling */
+main th {
+    font-family:
+        system-ui,
+        -apple-system,
+        sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+html[data-mode="dark"] main tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+/* Theme-specific responsive typography */
+@media (max-width: 1024px) {
+    body {
+        font-size: 17px;
+    }
+
+    main p {
+        text-align: left;
+        hyphens: none;
+    }
+
+    main p:first-of-type::first-letter {
+        font-size: 2.5em;
+    }
+}

@@ -14,7 +14,7 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 # Configuration
-TEMPLATE_URL="https://raw.githubusercontent.com/adammharris/diaryx-tools/refs/heads/main/index.html"  # Leave empty to use local index.html
+TEMPLATE_URL=""  # Leave empty to use local index.html
 OUTPUT_DIR="./public"
 TEMPLATE_FILE="./template.html"
 
@@ -254,6 +254,14 @@ while IFS= read -r mdfile; do
     # Copy the markdown file next to the HTML file
     cp "$SOURCE_DIR/$mdfile" "$(dirname "$htmlfile")/"
 done <<< "$DISCOVERED_FILES"
+
+# Copy themes directory if it exists
+if [ -d "./themes" ]; then
+    echo -e "${BLUE}Copying themes...${NC}"
+    mkdir -p "$OUTPUT_DIR/themes"
+    cp -r ./themes/*.css "$OUTPUT_DIR/themes/" 2>/dev/null || true
+    echo -e "${GREEN}✓${NC} Copied theme files"
+fi
 
 # Copy assets from source directory
 if [ -d "$SOURCE_DIR" ]; then

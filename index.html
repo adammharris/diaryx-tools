@@ -7,106 +7,609 @@
         <!-- DOMPurify as UMD global -->
         <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
         <style>
+            /* Default theme - inline fallback for static builds */
+            :root {
+                /* Light mode colors */
+                --primary-color: #3498db;
+                --primary-hover: #2980b9;
+                --text-color: #2c3e50;
+                --text-muted: #7f8c8d;
+                --background: #ffffff;
+                --background-alt: #f7f7f9;
+                --border-color: #e3e3e6;
+                --border-accent: #3498db;
+                --nav-background: #e8f4f8;
+                --error-background: #fee;
+                --error-border: #fcc;
+                --error-text: #c33;
+                --code-background: #f5f5f5;
+                --shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                --shadow-hover: 0 4px 8px rgba(0, 0, 0, 0.15);
+            }
+
+            /* Dark mode colors */
+            html[data-mode="dark"] {
+                --primary-color: #5dade2;
+                --primary-hover: #3498db;
+                --text-color: #e8e8e8;
+                --text-muted: #a0a0a0;
+                --background: #1a1a1a;
+                --background-alt: #2d2d2d;
+                --border-color: #404040;
+                --border-accent: #5dade2;
+                --nav-background: #1e3a4a;
+                --error-background: #3d1a1a;
+                --error-border: #6b2020;
+                --error-text: #ff6b6b;
+                --code-background: #2d2d2d;
+                --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            }
+
             body {
                 font-family:
                     system-ui,
                     -apple-system,
-                    Segoe UI,
+                    "Segoe UI",
                     Roboto,
-                    Helvetica,
+                    "Helvetica Neue",
                     Arial,
                     sans-serif;
-                max-width: 800px;
+                line-height: 1.6;
+                color: var(--text-color);
+                background: var(--background);
+                max-width: 1400px;
                 margin: 2rem auto;
-                padding: 0 1rem;
+                padding: 0 1.5rem;
+                display: flex;
+                flex-direction: row-reverse;
+                gap: 1.5rem;
             }
+
+            /* Sticky metadata sidebar */
             .diaryx-meta {
-                background: #f7f7f9;
-                border: 1px solid #e3e3e6;
-                border-radius: 6px;
+                position: sticky;
+                top: 1rem;
+                align-self: flex-start;
+                background: var(--background-alt);
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
                 padding: 1rem;
-                margin-bottom: 1.5rem;
+                padding-bottom: 2.5rem;
+                box-shadow: var(--shadow);
+                min-width: 240px;
+                max-width: 280px;
+                max-height: calc(100vh - 2rem);
+                overflow-y: auto;
+                flex-shrink: 0;
+                position: relative;
             }
+
             .diaryx-meta dl {
                 display: grid;
-                grid-template-columns: 160px 1fr;
-                gap: 0.5rem 0.75rem;
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
                 margin: 0;
             }
+
             .diaryx-meta dt {
                 font-weight: 600;
-                color: #2c3e50;
+                color: var(--text-color);
+                font-size: 0.8rem;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                margin-top: 0.4rem;
             }
+
+            /* Theme controls container */
+            .theme-controls {
+                position: absolute;
+                bottom: 2.5rem;
+                right: 0.5rem;
+                display: flex;
+                flex-direction: column;
+                gap: 0.4rem;
+                z-index: 10;
+                pointer-events: none;
+            }
+
+            .theme-controls-mobile {
+                display: none;
+            }
+
+            /* Theme and mode toggle buttons */
+            .theme-button,
+            .mode-button {
+                width: 1.5rem;
+                height: 1.5rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1rem;
+                font-weight: bold;
+                color: var(--primary-color);
+                cursor: pointer;
+                background: var(--background);
+                border-radius: 3px;
+                border: 1px solid var(--border-color);
+                transition: all 0.2s ease;
+                pointer-events: auto;
+            }
+
+            .theme-button:hover,
+            .mode-button:hover {
+                background: var(--primary-color);
+                color: var(--background);
+                transform: scale(1.05);
+            }
+
+            .mode-button.auto {
+                opacity: 0.7;
+            }
+
+            .theme-menu {
+                position: absolute;
+                bottom: 0;
+                right: 2rem;
+                background: var(--background);
+                border: 1px solid var(--border-color);
+                border-radius: 6px;
+                padding: 0.5rem;
+                box-shadow: var(--shadow-hover);
+                display: none;
+                z-index: 1000;
+                min-width: 120px;
+            }
+
+            .theme-menu.visible {
+                display: block;
+            }
+
+            .theme-menu button {
+                display: block;
+                width: 100%;
+                padding: 0.4rem 0.6rem;
+                margin: 0.2rem 0;
+                border: 1px solid var(--border-color);
+                border-radius: 4px;
+                background: var(--background-alt);
+                color: var(--text-color);
+                cursor: pointer;
+                font-size: 0.85rem;
+                text-align: left;
+                transition: all 0.2s ease;
+            }
+
+            .theme-menu button:hover {
+                background: var(--primary-color);
+                color: var(--background);
+                border-color: var(--primary-color);
+            }
+
+            .theme-menu button.active {
+                background: var(--primary-color);
+                color: var(--background);
+                border-color: var(--primary-color);
+                font-weight: 600;
+            }
+
+            .diaryx-meta dt:first-child {
+                margin-top: 0;
+            }
+
             .diaryx-meta dd {
                 margin: 0;
+                color: var(--text-muted);
+                font-size: 0.85rem;
             }
+
             .diaryx-meta a {
-                color: #3498db;
+                color: var(--primary-color);
                 text-decoration: none;
+                transition: color 0.2s ease;
             }
+
             .diaryx-meta a:hover {
+                color: var(--primary-hover);
                 text-decoration: underline;
             }
-            .navigation-section {
-                background: #e8f4f8;
-                border-left: 4px solid #3498db;
-                padding: 0.75rem 1rem;
-                margin: 1rem 0;
-                border-radius: 4px;
+
+            /* Main content area */
+            main {
+                flex: 1;
+                min-width: 0;
+                max-width: 750px;
             }
+
+            /* Navigation Section */
+            .navigation-section {
+                background: var(--nav-background);
+                border-left: 3px solid var(--border-accent);
+                padding: 0.75rem 1rem;
+                margin: 1rem 0 0 0;
+                border-radius: 6px;
+                box-shadow: var(--shadow);
+            }
+
             .navigation-section h3 {
                 margin: 0 0 0.5rem 0;
-                font-size: 1rem;
-                color: #2c3e50;
+                font-size: 0.95rem;
+                font-weight: 600;
+                color: var(--text-color);
             }
+
             .navigation-section ul {
                 margin: 0;
-                padding-left: 1.5rem;
+                padding-left: 1.25rem;
+                list-style-type: disc;
             }
+
             .navigation-section li {
-                margin: 0.25rem 0;
+                margin: 0.35rem 0;
+                line-height: 1.4;
+                font-size: 0.85rem;
             }
+
             .navigation-link {
-                color: #2980b9;
+                color: var(--primary-hover);
                 cursor: pointer;
                 text-decoration: none;
+                transition: color 0.2s ease;
             }
+
             .navigation-link:hover {
+                color: var(--primary-color);
                 text-decoration: underline;
             }
+
+            /* Breadcrumb */
             .breadcrumb {
-                background: #fff;
-                padding: 0.5rem 0;
-                margin-bottom: 1rem;
+                background: var(--background);
+                padding: 0.75rem 0;
+                margin-bottom: 1.5rem;
                 font-size: 0.9rem;
-                color: #7f8c8d;
+                color: var(--text-muted);
+                border-bottom: 1px solid var(--border-color);
             }
+
             .breadcrumb a {
-                color: #3498db;
+                color: var(--primary-color);
                 text-decoration: none;
+                transition: color 0.2s ease;
             }
+
             .breadcrumb a:hover {
+                color: var(--primary-hover);
                 text-decoration: underline;
             }
+
             .breadcrumb span {
                 margin: 0 0.5rem;
+                color: var(--text-muted);
             }
-            pre,
+
+            /* Code Blocks */
+            pre {
+                background: var(--code-background);
+                border: 1px solid var(--border-color);
+                border-radius: 6px;
+                padding: 1rem;
+                overflow-x: auto;
+                line-height: 1.5;
+            }
+
             code {
-                background: #f5f5f5;
+                background: var(--code-background);
+                padding: 0.2rem 0.4rem;
+                border-radius: 3px;
+                font-size: 0.9em;
+                font-family: "Courier New", Courier, monospace;
             }
+
+            pre code {
+                background: none;
+                padding: 0;
+            }
+
+            /* Images */
             img {
                 max-width: 100%;
                 height: auto;
+                border-radius: 6px;
+                margin: 1rem 0;
             }
+
+            /* Error Messages */
             .error {
-                background: #fee;
-                border: 1px solid #fcc;
-                border-radius: 4px;
-                padding: 1rem;
-                color: #c33;
+                background: var(--error-background);
+                border: 1px solid var(--error-border);
+                border-radius: 6px;
+                padding: 1.25rem;
+                color: var(--error-text);
+                margin: 1rem 0;
+            }
+
+            /* Content Typography */
+            main h1 {
+                font-size: 2.5rem;
+                margin: 1.5rem 0 1rem;
+                color: var(--text-color);
+                line-height: 1.2;
+            }
+
+            main h2 {
+                font-size: 2rem;
+                margin: 1.5rem 0 1rem;
+                color: var(--text-color);
+                border-bottom: 2px solid var(--border-color);
+                padding-bottom: 0.5rem;
+            }
+
+            main h3 {
+                font-size: 1.5rem;
+                margin: 1.25rem 0 0.75rem;
+                color: var(--text-color);
+            }
+
+            main p {
+                margin: 1rem 0;
+                line-height: 1.7;
+            }
+
+            main ul,
+            main ol {
+                margin: 1rem 0;
+                padding-left: 2rem;
+            }
+
+            main li {
+                margin: 0.5rem 0;
+                line-height: 1.6;
+            }
+
+            main blockquote {
+                border-left: 4px solid var(--border-accent);
+                padding-left: 1.5rem;
+                margin: 1.5rem 0;
+                color: var(--text-muted);
+                font-style: italic;
+            }
+
+            main a {
+                color: var(--primary-color);
+                text-decoration: none;
+                transition: color 0.2s ease;
+            }
+
+            main a:hover {
+                color: var(--primary-hover);
+                text-decoration: underline;
+            }
+
+            /* Tables */
+            main table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 1.5rem 0;
+            }
+
+            main th,
+            main td {
+                padding: 0.75rem;
+                text-align: left;
+                border: 1px solid var(--border-color);
+            }
+
+            main th {
+                background: var(--background-alt);
+                font-weight: 600;
+                color: var(--text-color);
+            }
+
+            main tr:nth-child(even) {
+                background: var(--background-alt);
+            }
+
+            /* Theme switcher styles */
+
+            /* Responsive Design */
+            @media (max-width: 1024px) {
+                body {
+                    margin: 1rem auto;
+                    padding: 0 1rem;
+                }
+
+                .diaryx-meta {
+                    position: fixed;
+                    top: 0;
+                    right: 0;
+                    z-index: 100;
+                    padding: 0.5rem;
+                    padding-bottom: 0.5rem;
+                    max-height: none;
+                    background: var(--background-alt);
+                    border-radius: 0 0 0 8px;
+                    margin: 0;
+                    max-width: 280px;
+                    box-shadow: -2px 2px 8px rgba(0, 0, 0, 0.1);
+                    display: grid;
+                    grid-template-columns: auto 1fr auto;
+                    gap: 0.25rem 0.4rem;
+                    align-items: baseline;
+                }
+
+                .diaryx-meta dl {
+                    display: contents;
+                }
+
+                .diaryx-meta dt {
+                    font-size: 0.65rem;
+                    font-weight: 600;
+                    text-transform: none;
+                    letter-spacing: normal;
+                    margin-top: 0;
+                }
+
+                .diaryx-meta dd {
+                    margin: 0;
+                    font-size: 0.7rem;
+                }
+
+                /* Show only key metadata on mobile */
+                .diaryx-meta dt[data-key="title"],
+                .diaryx-meta dd[data-key="title"],
+                .diaryx-meta dt[data-key="author"],
+                .diaryx-meta dd[data-key="author"],
+                .diaryx-meta dt[data-key="visibility"],
+                .diaryx-meta dd[data-key="visibility"] {
+                    display: block;
+                }
+
+                /* Hide other metadata by default on mobile */
+                .diaryx-meta
+                    dt:not([data-key="title"]):not([data-key="author"]):not(
+                        [data-key="visibility"]
+                    ),
+                .diaryx-meta
+                    dd:not([data-key="title"]):not([data-key="author"]):not(
+                        [data-key="visibility"]
+                    ) {
+                    display: none;
+                }
+
+                /* Toggle button for showing all metadata */
+                .diaryx-meta::after {
+                    content: "+";
+                    width: 1.25rem;
+                    height: 1.25rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 1rem;
+                    font-weight: bold;
+                    color: var(--primary-color);
+                    cursor: pointer;
+                    background: var(--background);
+                    border-radius: 3px;
+                    border: 1px solid var(--border-color);
+                    z-index: 20;
+                    grid-column: 3;
+                }
+
+                .diaryx-meta.expanded {
+                    display: block;
+                }
+
+                .diaryx-meta.expanded::after {
+                    content: "−";
+                    position: absolute;
+                    top: 0.5rem;
+                    right: 0.5rem;
+                }
+
+                .diaryx-meta.expanded dl {
+                    display: block;
+                }
+
+                .diaryx-meta.expanded dt {
+                    display: block !important;
+                    margin-top: 0.5rem;
+                }
+
+                .diaryx-meta.expanded dt:first-of-type {
+                    margin-top: 0;
+                }
+
+                .diaryx-meta.expanded dd {
+                    display: block !important;
+                    margin-left: 0;
+                    margin-bottom: 0.25rem;
+                }
+
+                .theme-controls {
+                    display: none;
+                }
+
+                .theme-controls-mobile {
+                    display: contents;
+                }
+
+                .theme-controls-mobile .theme-button {
+                    width: 1.25rem;
+                    height: 1.25rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 0.8rem;
+                    font-weight: bold;
+                    color: var(--primary-color);
+                    cursor: pointer;
+                    background: var(--background);
+                    border-radius: 3px;
+                    border: 1px solid var(--border-color);
+                    transition: all 0.2s ease;
+                    pointer-events: auto;
+                    grid-column: 3;
+                    grid-row: 1;
+                }
+
+                .theme-controls-mobile .mode-button {
+                    width: 1.25rem;
+                    height: 1.25rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 0.8rem;
+                    font-weight: bold;
+                    color: var(--primary-color);
+                    cursor: pointer;
+                    background: var(--background);
+                    border-radius: 3px;
+                    border: 1px solid var(--border-color);
+                    transition: all 0.2s ease;
+                    pointer-events: auto;
+                    grid-column: 3;
+                    grid-row: 2;
+                }
+
+                .theme-controls-mobile .theme-button:hover,
+                .theme-controls-mobile .mode-button:hover {
+                    background: var(--primary-color);
+                    color: var(--background);
+                    transform: scale(1.05);
+                }
+
+                .theme-controls-mobile .mode-button.auto {
+                    opacity: 0.7;
+                }
+
+                .theme-menu {
+                    position: fixed;
+                    bottom: auto;
+                    top: 2.5rem;
+                    right: 0.5rem;
+                    left: auto;
+                }
+
+                main h1 {
+                    font-size: 2rem;
+                }
+
+                main h2 {
+                    font-size: 1.5rem;
+                }
+
+                main h3 {
+                    font-size: 1.25rem;
+                }
             }
         </style>
+        <!-- Theme stylesheet - dynamically loaded (optional for interactive mode) -->
+        <!-- Placed after inline styles so external themes can override defaults -->
+        <link
+            id="theme-stylesheet"
+            rel="stylesheet"
+            href="./themes/default.css"
+        />
         <script type="module">
             import { marked } from "https://esm.sh/marked@12";
             import yaml from "https://esm.sh/js-yaml@4";
@@ -131,6 +634,201 @@
             let navigationHistory = [];
             let currentFile = null;
             let isStaticMode = false;
+
+            // Theme management
+            const THEMES = ["default", "minimal", "serif"];
+            const THEME_STORAGE_KEY = "diaryx-theme";
+            const MODE_STORAGE_KEY = "diaryx-mode";
+
+            function getSystemMode() {
+                return window.matchMedia &&
+                    window.matchMedia("(prefers-color-scheme: dark)").matches
+                    ? "dark"
+                    : "light";
+            }
+
+            function loadTheme() {
+                const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+                const savedMode = localStorage.getItem(MODE_STORAGE_KEY);
+                const theme =
+                    savedTheme && THEMES.includes(savedTheme)
+                        ? savedTheme
+                        : "default";
+                // If no saved mode, use auto (system preference)
+                const mode = savedMode || "auto";
+                applyTheme(theme, mode);
+                return { theme, mode };
+            }
+
+            function applyTheme(theme, mode) {
+                const stylesheet = document.getElementById("theme-stylesheet");
+                if (stylesheet) {
+                    stylesheet.href = `./themes/${theme}.css`;
+                }
+
+                // Determine actual mode to apply
+                const actualMode = mode === "auto" ? getSystemMode() : mode;
+                document.documentElement.setAttribute("data-mode", actualMode);
+
+                localStorage.setItem(THEME_STORAGE_KEY, theme);
+                localStorage.setItem(MODE_STORAGE_KEY, mode);
+
+                // Update UI
+                updateThemeMenuActive(theme);
+                updateModeButton(mode, actualMode);
+            }
+
+            function updateThemeMenuActive(theme) {
+                const buttons = document.querySelectorAll(".theme-menu button");
+                buttons.forEach((btn) => {
+                    const btnTheme = btn.dataset.theme;
+                    if (btnTheme === theme) {
+                        btn.classList.add("active");
+                    } else {
+                        btn.classList.remove("active");
+                    }
+                });
+            }
+
+            function updateModeButton(mode, actualMode) {
+                const modeButton = document.getElementById("mode-button");
+                const modeButtonMobile =
+                    document.getElementById("mode-button-mobile");
+
+                const updateButton = (btn) => {
+                    if (!btn) return;
+                    // Update icon based on actual displayed mode
+                    if (mode === "auto") {
+                        btn.textContent = "◐";
+                        btn.classList.add("auto");
+                        btn.title = `Auto (${actualMode === "dark" ? "Dark" : "Light"})`;
+                    } else if (actualMode === "dark") {
+                        btn.textContent = "☾";
+                        btn.classList.remove("auto");
+                        btn.title = "Dark mode";
+                    } else {
+                        btn.textContent = "☀";
+                        btn.classList.remove("auto");
+                        btn.title = "Light mode";
+                    }
+                };
+
+                updateButton(modeButton);
+                updateButton(modeButtonMobile);
+            }
+
+            async function checkThemesFolder() {
+                try {
+                    const response = await fetch("./themes/default.css", {
+                        method: "HEAD",
+                    });
+                    return response.ok;
+                } catch {
+                    return false;
+                }
+            }
+
+            function initThemeSwitcher() {
+                const themeButton = document.getElementById("theme-button");
+                const themeButtonMobile = document.getElementById(
+                    "theme-button-mobile",
+                );
+                const themeMenu = document.getElementById("theme-menu");
+                const modeButton = document.getElementById("mode-button");
+                const modeButtonMobile =
+                    document.getElementById("mode-button-mobile");
+
+                if (!themeMenu) return;
+
+                const { theme, mode } = loadTheme();
+
+                // Toggle theme menu visibility - desktop
+                if (themeButton) {
+                    themeButton.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        themeMenu.classList.toggle("visible");
+                    });
+                }
+
+                // Toggle theme menu visibility - mobile
+                if (themeButtonMobile) {
+                    themeButtonMobile.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        themeMenu.classList.toggle("visible");
+                    });
+                }
+
+                // Close menu when clicking outside
+                document.addEventListener("click", (e) => {
+                    if (
+                        !themeMenu.contains(e.target) &&
+                        e.target !== themeButton
+                    ) {
+                        themeMenu.classList.remove("visible");
+                    }
+                });
+
+                // Handle theme selection
+                const buttons = themeMenu.querySelectorAll("button");
+                buttons.forEach((btn) => {
+                    btn.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        const selectedTheme = btn.dataset.theme;
+                        const currentMode =
+                            localStorage.getItem(MODE_STORAGE_KEY) || "auto";
+                        applyTheme(selectedTheme, currentMode);
+                        themeMenu.classList.remove("visible");
+                    });
+                });
+
+                // Handle mode toggle (cycles: auto -> light -> dark -> auto)
+                const handleModeToggle = (e) => {
+                    e.stopPropagation();
+                    const currentTheme =
+                        localStorage.getItem(THEME_STORAGE_KEY) || "default";
+                    const currentMode =
+                        localStorage.getItem(MODE_STORAGE_KEY) || "auto";
+
+                    let newMode;
+                    if (currentMode === "auto") {
+                        newMode = "light";
+                    } else if (currentMode === "light") {
+                        newMode = "dark";
+                    } else {
+                        newMode = "auto";
+                    }
+
+                    applyTheme(currentTheme, newMode);
+                };
+
+                if (modeButton) {
+                    modeButton.addEventListener("click", handleModeToggle);
+                }
+
+                if (modeButtonMobile) {
+                    modeButtonMobile.addEventListener(
+                        "click",
+                        handleModeToggle,
+                    );
+                }
+
+                // Listen for system theme changes when in auto mode
+                if (window.matchMedia) {
+                    window
+                        .matchMedia("(prefers-color-scheme: dark)")
+                        .addEventListener("change", (e) => {
+                            const currentMode =
+                                localStorage.getItem(MODE_STORAGE_KEY) ||
+                                "auto";
+                            if (currentMode === "auto") {
+                                const currentTheme =
+                                    localStorage.getItem(THEME_STORAGE_KEY) ||
+                                    "default";
+                                applyTheme(currentTheme, "auto");
+                            }
+                        });
+                }
+            }
 
             // Detect if we're in static mode (serving .html files)
             async function detectMode() {
@@ -238,8 +936,14 @@
             }
 
             function renderNavigation(meta) {
-                const nav = document.getElementById("navigation");
-                nav.innerHTML = "";
+                const metaContainer = document.querySelector(".diaryx-meta");
+                if (!metaContainer) return;
+
+                // Remove any existing navigation sections
+                const existingNav = metaContainer.querySelectorAll(
+                    ".navigation-section",
+                );
+                existingNav.forEach((nav) => nav.remove());
 
                 // Render part_of (parent documents)
                 if (meta.part_of) {
@@ -264,7 +968,7 @@
                     });
 
                     section.appendChild(ul);
-                    nav.appendChild(section);
+                    metaContainer.appendChild(section);
                 }
 
                 // Render contents (child documents)
@@ -290,7 +994,7 @@
                     });
 
                     section.appendChild(ul);
-                    nav.appendChild(section);
+                    metaContainer.appendChild(section);
                 }
             }
 
@@ -305,7 +1009,9 @@
                     if (meta[key] == null) return;
                     const dt = document.createElement("dt");
                     dt.textContent = key;
+                    dt.setAttribute("data-key", key);
                     const dd = document.createElement("dd");
+                    dd.setAttribute("data-key", key);
                     dd.innerHTML = toInlineHTML(meta[key]);
                     dl.append(dt, dd);
                     seenKeys.add(key);
@@ -320,7 +1026,9 @@
                     if (seenKeys.has(key)) return;
                     const dt = document.createElement("dt");
                     dt.textContent = key;
+                    dt.setAttribute("data-key", key);
                     const dd = document.createElement("dd");
+                    dd.setAttribute("data-key", key);
                     dd.innerHTML = toInlineHTML(meta[key]);
                     dl.append(dt, dd);
                 });
@@ -445,15 +1153,82 @@
                 console.log(
                     `Diaryx viewer running in ${isStaticMode ? "static" : "interactive"} mode`,
                 );
+                loadTheme();
+                initThemeSwitcher();
                 loadFile(MD_PATH);
+                initMobileMetaToggle();
             })();
+
+            // Mobile metadata toggle functionality
+            function initMobileMetaToggle() {
+                const metaContainer = document.querySelector(".diaryx-meta");
+                if (!metaContainer) return;
+
+                // Add click handler for mobile toggle
+                metaContainer.addEventListener("click", (e) => {
+                    // Only toggle on mobile (when pseudo-element is visible)
+                    if (window.innerWidth <= 1024) {
+                        const rect = metaContainer.getBoundingClientRect();
+                        // Check if clicking in right area (where the + button is in grid column 3)
+                        // The toggle button is in the third column, roughly last 40px
+                        const isToggleButton = e.clientX > rect.right - 40;
+
+                        if (isToggleButton) {
+                            metaContainer.classList.toggle("expanded");
+                        }
+                    }
+                });
+
+                // Reset expanded state when resizing to desktop
+                window.addEventListener("resize", () => {
+                    if (window.innerWidth > 1024) {
+                        metaContainer.classList.remove("expanded");
+                    }
+                });
+            }
         </script>
     </head>
     <body>
         <div class="diaryx-meta">
             <dl id="meta"></dl>
+            <div class="theme-controls-mobile">
+                <div
+                    class="theme-button"
+                    id="theme-button-mobile"
+                    title="Change theme"
+                >
+                    🎨
+                </div>
+                <div
+                    class="mode-button"
+                    id="mode-button-mobile"
+                    title="Toggle light/dark mode"
+                >
+                    ◐
+                </div>
+            </div>
+            <div class="theme-controls">
+                <div
+                    class="theme-button"
+                    id="theme-button"
+                    title="Change theme"
+                >
+                    🎨
+                </div>
+                <div
+                    class="mode-button"
+                    id="mode-button"
+                    title="Toggle light/dark mode"
+                >
+                    ◐
+                </div>
+            </div>
+            <div class="theme-menu" id="theme-menu">
+                <button data-theme="default">Default</button>
+                <button data-theme="minimal">Minimal</button>
+                <button data-theme="serif">Serif</button>
+            </div>
         </div>
-        <nav id="navigation"></nav>
         <main id="content">Loading…</main>
     </body>
 </html>

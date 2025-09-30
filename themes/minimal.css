@@ -1,0 +1,53 @@
+/* Diaryx Viewer - Minimal Theme */
+
+/* Light mode colors (default) */
+:root {
+    --primary-color: #0066cc;
+    --primary-hover: #0052a3;
+    --text-color: #333333;
+    --text-muted: #666666;
+    --background: #ffffff;
+    --background-alt: #fafafa;
+    --border-color: #dddddd;
+    --border-accent: #0066cc;
+    --nav-background: #f5f5f5;
+    --error-background: #fff5f5;
+    --error-border: #ffcccc;
+    --error-text: #cc0000;
+    --code-background: #f8f8f8;
+    --shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --shadow-hover: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Dark mode colors */
+html[data-mode="dark"] {
+    --primary-color: #4d9fff;
+    --primary-hover: #3385ff;
+    --text-color: #e0e0e0;
+    --text-muted: #999999;
+    --background: #0a0a0a;
+    --background-alt: #1a1a1a;
+    --border-color: #333333;
+    --border-accent: #4d9fff;
+    --nav-background: #151515;
+    --error-background: #2a1515;
+    --error-border: #4a2020;
+    --error-text: #ff6666;
+    --code-background: #1a1a1a;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* Theme-specific navigation list style */
+.navigation-section ul {
+    list-style-type: circle;
+}
+
+/* Theme-specific dark mode adjustments */
+html[data-mode="dark"] img {
+    opacity: 0.85;
+}
+
+html[data-mode="dark"] main tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.02);
+}

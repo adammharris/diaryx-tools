@@ -33,10 +33,27 @@ An interactive, single-file HTML viewer that:
 - ✅ Clickable links to load related Diaryx files dynamically
 - ✅ **Smart link handling**: Auto-converts `.md` links to `.html` in static mode
 - ✅ **Dual mode support**: Works as interactive viewer or static site
+- ✅ **Sticky metadata sidebar**: Metadata stays visible while scrolling through long documents
+- ✅ **Swappable themes**: 4 built-in themes (Default, Dark, Minimal, Serif) with theme switcher
+- ✅ **Theme persistence**: Remembers your theme choice in localStorage
+- ✅ **Inline default theme**: Works in both interactive and deployed static sites
+- ✅ **Fully customizable**: Easy to create custom themes with CSS variables
+- ✅ **Responsive two-column layout**: Sidebar and content area on desktop, stacks on mobile
 - ✅ Clean, responsive UI with proper styling
 - ✅ Uses DOMPurify for XSS protection
 - ✅ Markdown rendering via `marked` library
 - ✅ YAML frontmatter parsing via `js-yaml`
+
+#### Available Themes
+
+The viewer includes 4 professionally designed themes in the `themes/` directory:
+
+1. **Default** - Modern, clean design with blue accents and system fonts
+2. **Dark** - Dark mode optimized for low-light environments
+3. **Minimal** - Distraction-free, simple design for focused reading
+4. **Serif** - Classic book-like typography with serif fonts and drop caps
+
+Switch themes using the dropdown in the top-right corner. See `themes/README.md` for details on creating custom themes.
 
 ### Lua Filter (`diaryx-lua-filter.lua`)
 
